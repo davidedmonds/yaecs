@@ -45,6 +45,7 @@ mod tests {
   use component::Component;
   use stash::Stash;
   use std::collections::HashSet;
+  use std::mem;
   use system::System;
 
   #[test]
@@ -66,17 +67,25 @@ mod tests {
   #[test]
   fn can_register_a_system() {
     let mut world = World::new();
-    let system = Box::new(FakeSystem::new());
     assert!(world.systems.is_empty());
-    world.register(system);
+    world.register(Box::new(FakeSystem::new()));
     assert!(!world.systems.is_empty());
   }
 
-  struct FakeSystem;
+  #[test]
+  fn systems_are_called_during_update() {
+    let mut world = World::new();
+    world.register(Box::new(FakeSystem::new()));
+    world.update();
+  }
+
+  struct FakeSystem {
+    called: bool
+  }
 
   impl FakeSystem {
     fn new() -> FakeSystem {
-      FakeSystem { }
+      FakeSystem { called: false }
     }
   }
 
