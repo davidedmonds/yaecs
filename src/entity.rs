@@ -1,7 +1,12 @@
 //! Entity
-use component::Component;
-use std::collections::HashMap;
+use component::ComponentStore;
 
 pub struct Entity {
-  pub components: HashMap<&'static str, Box<Component>>
+  pub components: ComponentStore
+}
+
+impl Entity {
+  pub fn new() -> Entity {
+    Entity { components: ComponentStore::new() }
+  }
 }

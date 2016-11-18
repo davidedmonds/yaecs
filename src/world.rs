@@ -1,9 +1,8 @@
 //! A world is the containing unit that allows the ECS to function.
 
-use component::Component;
+use component::ComponentStore;
 use entity::Entity;
 use system::System;
-use std::collections::HashMap;
 
 pub struct World {
   pub entities: Vec<Entity>,
@@ -18,10 +17,10 @@ impl World {
     }
   }
 
-  pub fn create_entity<CB>(&mut self, cb: CB) where CB: Fn() -> (HashMap<&'static str, Box<Component>>) {
-    self.entities.push(Entity {
-      components: cb()
-    });
+  pub fn create_entity<CB>(&mut self, cb: CB) where CB: Fn(&mut ComponentStore) -> () {
+    let mut entity = Entity::new();
+    cb(&mut entity.components);
+    self.entities.push(entity);
   }
 
   pub fn register(&mut self, system: Box<System>) {

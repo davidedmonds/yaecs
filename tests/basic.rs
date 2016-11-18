@@ -1,8 +1,7 @@
 extern crate avow;
 extern crate yaecs;
 
-use std::collections::HashMap;
-
+use yaecs::component::Component;
 use yaecs::system::System;
 use yaecs::world::World;
 
@@ -17,16 +16,18 @@ fn world_starts_empty() {
 fn can_create_an_entity_with_no_components() {
   let mut world = World::new();
   assert!(world.entities.is_empty());
-  world.create_entity(|| HashMap::new());
+  world.create_entity(| _ | ());
   assert!(!world.entities.is_empty());
 }
 
 #[test]
 fn can_create_an_entity_with_multiple_components() {
-  unimplemented!();
   let mut world = World::new();
   assert!(world.entities.is_empty());
-  world.create_entity(|| HashMap::new());
+  world.create_entity(| components | {
+    components.add(Box::new(FakeComponent {}));
+    components.add(Box::new(OtherFakeComponent {}));
+  });
   assert!(!world.entities.is_empty());
 }
 
@@ -43,6 +44,22 @@ fn systems_are_called_during_update() {
   let mut world = World::new();
   world.register(Box::new(FakeSystem::new()));
   world.update();
+}
+
+struct FakeComponent;
+
+impl Component for FakeComponent {
+  fn id(&self) -> &'static str {
+    "FakeComponent"
+  }
+}
+
+struct OtherFakeComponent;
+
+impl Component for OtherFakeComponent {
+  fn id(&self) -> &'static str {
+    "OtherFakeComponent"
+  }
 }
 
 struct FakeSystem;
