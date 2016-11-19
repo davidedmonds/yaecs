@@ -19,4 +19,12 @@ impl ComponentStore {
   pub fn add(&mut self, component: Box<Component>) {
     self.components.insert(component.id(), component);
   }
+
+  pub fn get(&self, id: &'static str) -> Option<&Box<Component>> {
+    self.components.get(id)
+  }
+
+  pub fn contains_key(&self, id: &'static str) -> bool {
+    self.components.contains_key(id)
+  }
 }
