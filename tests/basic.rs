@@ -3,6 +3,7 @@ extern crate yaecs;
 
 use yaecs::component::Component;
 use yaecs::entity::Entity;
+use yaecs::global::Globals;
 use yaecs::system::System;
 use yaecs::world::World;
 
@@ -76,7 +77,7 @@ impl FakeSystem {
 }
 
 impl System for FakeSystem {
-  fn process(&mut self, entities: Vec<&Entity>) { }
+  fn process(&mut self, entities: Vec<&Entity>, globals: &Globals) { }
   fn operates_on(&self) -> Vec<&'static str> {
     vec!("FakeComponent")
   }

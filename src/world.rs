@@ -2,10 +2,12 @@
 
 use component::ComponentStore;
 use entity::Entity;
+use global::Globals;
 use system::System;
 
 pub struct World {
   pub entities: Vec<Entity>,
+  pub globals: Globals,
   pub systems: Vec<Box<System>>
 }
 
@@ -13,6 +15,7 @@ impl World {
   pub fn new() -> World {
     World {
       entities: vec!(),
+      globals: Globals::new(),
       systems: vec!()
     }
   }
@@ -28,12 +31,13 @@ impl World {
   }
 
   pub fn update(&mut self) {
+    let ref globals = self.globals;
     for system in &mut self.systems {
       let ref entities = &self.entities;
       let filtered_entities = entities.into_iter().filter(| e | {
         system.operates_on().into_iter().all(| id | e.components.contains_key(id))
       }).collect();
-      system.process(filtered_entities);
+      system.process(filtered_entities, globals);
     }
   }
 }
