@@ -1,7 +1,8 @@
 extern crate avow;
 extern crate yaecs;
 
-use yaecs::component::Component;
+use std::any::TypeId;
+
 use yaecs::entity::Entity;
 use yaecs::global::Globals;
 use yaecs::system::System;
@@ -27,8 +28,8 @@ fn can_create_an_entity_with_multiple_components() {
   let mut world = World::new();
   assert!(world.entities.is_empty());
   world.create_entity(move | components | {
-    components.add(Box::new(FakeComponent(128)));
-    components.add(Box::new(OtherFakeComponent {}));
+    components.insert(FakeComponent(128));
+    components.insert(OtherFakeComponent {});
   });
   assert!(!world.entities.is_empty());
 }
@@ -46,27 +47,15 @@ fn systems_are_called_during_update() {
   let mut world = World::new();
   world.register(Box::new(FakeSystem::new()));
   world.create_entity(| components | {
-    components.add(Box::new(FakeComponent(128)));
-    components.add(Box::new(OtherFakeComponent {}));
+    components.insert(FakeComponent(128));
+    components.insert(OtherFakeComponent {});
   });
   world.update();
 }
 
 struct FakeComponent(u8);
 
-impl Component for FakeComponent {
-  fn id(&self) -> &'static str {
-    "FakeComponent"
-  }
-}
-
 struct OtherFakeComponent;
-
-impl Component for OtherFakeComponent {
-  fn id(&self) -> &'static str {
-    "OtherFakeComponent"
-  }
-}
 
 struct FakeSystem;
 
@@ -78,7 +67,7 @@ impl FakeSystem {
 
 impl System for FakeSystem {
   fn process(&mut self, entities: Vec<&Entity>, globals: &Globals) { }
-  fn operates_on(&self) -> Vec<&'static str> {
-    vec!("FakeComponent")
+  fn operates_on(&self) -> Vec<TypeId> {
+    vec!(TypeId::of::<FakeComponent>())
   }
 }
