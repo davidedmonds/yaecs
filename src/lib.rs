@@ -1,5 +1,5 @@
 //! Yet Another Entity Component System
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 extern crate anymap;
 
 pub mod component;

@@ -34,9 +34,9 @@ impl World {
     let ref globals = self.globals;
     for system in &mut self.systems {
       let ref entities = &self.entities;
-      let filtered_entities = entities.into_iter().filter(| e | {
-        system.operates_on().into_iter().all(| id | e.components.contains_key(id))
-      }).collect();
+      let filtered_entities = entities.into_iter()
+        .filter(| e | system.operates_on().into_iter().all(| id | e.components.contains_key(id)))
+        .collect();
       system.process(filtered_entities, globals);
     }
   }
