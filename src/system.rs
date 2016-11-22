@@ -2,6 +2,7 @@
 use entity::Entity;
 use global::Globals;
 use std::any::TypeId;
+use world::World;
 
 /// A `System` operates on a `Vec<&Entity>`, either mutating the `Entity`, or using the `Entity` to
 /// mutate `Globals`.
@@ -16,5 +17,5 @@ pub trait System {
 
   /// Operate on the supplied `Vec<&Entity>` and `&Globals` according to the purpose of
   /// this `System`.
-  fn process(&mut self, entities: Vec<&Entity>, globals: &Globals);
+  fn process(&self, world: &World, entities: Vec<&Entity>, globals: &Globals);
 }
