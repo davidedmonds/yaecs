@@ -47,12 +47,12 @@ impl World {
   /// components that they are interested in. Currently completely un-optimized.
   pub fn update(&mut self) {
     let ref globals = self.globals;
-    for system in &self.systems {
+    for system in &mut self.systems {
       let ref entities = &self.entities;
       let filtered_entities = entities.into_iter()
         .filter(| e | system.operates_on().into_iter().all(| id | e.components.contains_key(&id)))
         .collect();
-      system.process(self, filtered_entities, globals);
+      system.process(filtered_entities, globals);
     }
   }
 }

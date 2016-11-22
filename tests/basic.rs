@@ -66,7 +66,7 @@ impl FakeSystem {
 }
 
 impl System for FakeSystem {
-  fn process(&self, world: &World, entities: Vec<&Entity>, globals: &Globals) { }
+  fn process(&mut self, entities: Vec<&Entity>, globals: &Globals) { }
   fn operates_on(&self) -> Vec<TypeId> {
     vec!(TypeId::of::<FakeComponent>())
   }
