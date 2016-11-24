@@ -2,10 +2,7 @@ extern crate yaecs;
 
 use std::any::TypeId;
 
-use yaecs::entity::Entity;
-use yaecs::global::Globals;
-use yaecs::system::{EntitySystem, System};
-use yaecs::world::{World, WorldData};
+use yaecs::{Entity, EntitySystem, Globals, System, World, WorldData};
 
 fn main() {
   let mut world = World::new();

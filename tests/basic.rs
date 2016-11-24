@@ -1,37 +1,32 @@
 extern crate avow;
 extern crate yaecs;
 
-use std::any::TypeId;
-
-use yaecs::entity::Entity;
-use yaecs::global::Globals;
-use yaecs::system::System;
-use yaecs::world::World;
+use yaecs::{System, World, WorldData};
 
 #[test]
 fn world_starts_empty() {
   let world = World::new();
-  assert!(world.entities.is_empty());
+  assert!(world.world_data.entities.is_empty());
   assert!(world.systems.is_empty());
 }
 
 #[test]
 fn can_create_an_entity_with_no_components() {
   let mut world = World::new();
-  assert!(world.entities.is_empty());
+  assert!(world.world_data.entities.is_empty());
   world.create_entity(| _ | ());
-  assert!(!world.entities.is_empty());
+  assert!(!world.world_data.entities.is_empty());
 }
 
 #[test]
 fn can_create_an_entity_with_multiple_components() {
   let mut world = World::new();
-  assert!(world.entities.is_empty());
+  assert!(world.world_data.entities.is_empty());
   world.create_entity(move | components | {
     components.insert(FakeComponent(128));
     components.insert(OtherFakeComponent {});
   });
-  assert!(!world.entities.is_empty());
+  assert!(!world.world_data.entities.is_empty());
 }
 
 #[test]
@@ -66,8 +61,5 @@ impl FakeSystem {
 }
 
 impl System for FakeSystem {
-  fn process(&mut self, entities: Vec<&Entity>, globals: &Globals) { }
-  fn operates_on(&self) -> Vec<TypeId> {
-    vec!(TypeId::of::<FakeComponent>())
-  }
+  fn process(&self, _: &mut WorldData) { }
 }
