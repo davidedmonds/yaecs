@@ -11,6 +11,7 @@ repository = "https://github.com/davidedmonds/yaecs"
 readme = "README.md"
 
 [dependencies]
+anymap = "*"
 snowflake = "*"
 
 [dev-dependencies]

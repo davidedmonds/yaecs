@@ -1,6 +1,10 @@
 //! Yet Another Entity Component System
 // #![deny(missing_docs)]
+extern crate anymap;
 
+use anymap::AnyMap;
+
+use std::any::Any;
 use std::fmt::{Debug, Formatter, Result};
 
 ///
@@ -54,7 +58,7 @@ pub struct Entity {
   /// Bitmask, indicating which components are implemented for this type.
   pub component_mask: u64,
   /// Bag of components
-  pub components: Vec<Box<Component>>
+  pub components: AnyMap
 }
 
 pub struct EntityBuilder(Entity);
@@ -64,7 +68,7 @@ impl EntityBuilder {
     EntityBuilder(Entity::new(label))
   }
 
-  pub fn add<T>(mut self, component: T) -> EntityBuilder where T: Component + 'static {
+  pub fn add<T>(mut self, component: T) -> EntityBuilder where T: Component + Any {
     self.0.add(component);
     self
   }
@@ -81,13 +85,13 @@ impl Entity {
       id: 0,
       label: String::from(label),
       component_mask: 0,
-      components: vec!(),
+      components: AnyMap::new(),
     }
   }
 
-  pub fn add<T>(&mut self, component: T) where T: Component + 'static {
+  pub fn add<T>(&mut self, component: T) where T: Component + Any {
     self.component_mask = self.component_mask | T::mask();
-    self.components.push(Box::new(component));
+    self.components.insert(component);
   }
 }
 
@@ -95,6 +99,7 @@ impl Entity {
 mod tests {
   use super::*;
 
+  #[derive(Debug, PartialEq)]
   pub struct TestComponent(u8);
 
   components!(TestComponent);
@@ -112,5 +117,6 @@ mod tests {
                                 .build();
     assert_eq!(entity.label, "test");
     assert_eq!(entity.component_mask, TestComponent::mask());
+    assert_eq!(entity.components.get(), Some(&TestComponent(1)));
   }
 }
