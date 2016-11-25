@@ -1,126 +1,116 @@
 //! Yet Another Entity Component System
-#![deny(missing_docs)]
-extern crate anymap;
+// #![deny(missing_docs)]
 
-use anymap::AnyMap;
-use std::any::TypeId;
+use std::fmt::{Debug, Formatter, Result};
 
-/// A `ComponentStore` is the storage mechanism for a component. Only one instance of any single
-/// component can be stored in a RawMap, which is consistent with how Entities and Components
-/// generally behave in an ECS.
-pub type ComponentStore = AnyMap;
+///
+pub trait Component {
+  fn mask() -> u64 where Self: Sized;
+  fn fmt(&self) -> String;
+}
+
+impl Debug for Component {
+  fn fmt(&self, f: &mut Formatter) -> Result {
+    write!(f, "Component {}", self.fmt())
+  }
+}
+
+/// Macro that generates a bitflag implementation for all supplied components. This allows us to
+/// much more quickly determine whether an `Entity` has the required components for a `System`.
+/// Note that we are limited to 64 component types with this method.
+#[macro_export]
+macro_rules! components {
+  ($($t:ident),+) => {
+    /// An enumeration of all the possible component types.
+    enum Components {
+      $($t),+
+    }
+
+    $(
+      /// Adds the `mask()` method to each component, returning the generated bitflag value.
+      impl Component for $t {
+        /// Returns a bitflag used to identify each component.
+        fn mask() -> u64 {
+          1 << (Components::$t as u64)
+        }
+
+        fn fmt(&self) -> String {
+          String::from("Component")
+        }
+      }
+    )+
+  };
+}
 
 /// An `Entity` is simply an identifier for a bag of components. In general, `System`s operate on
-/// a `Vec<&Entity>` which is a filtered view based on which components the `System` is
-/// interested in.
+/// a subset of all entities that posess components the `System` is interested in.
 #[derive(Debug)]
 pub struct Entity {
-  /// The bag of components.
-  pub components: ComponentStore
+  /// The unique identifier for this entity. TODO is this needed?
+  pub id: u64,
+  /// A user-defined label for this entity. This could be thrown out if in future we run into
+  /// memory issues, but for now its convenient as it allows us to more easily identify an entity.
+  pub label: String,
+  /// Bitmask, indicating which components are implemented for this type.
+  pub component_mask: u64,
+  /// Bag of components
+  pub components: Vec<Box<Component>>
+}
+
+pub struct EntityBuilder(Entity);
+
+impl EntityBuilder {
+  pub fn create(label: &'static str) -> EntityBuilder {
+    EntityBuilder(Entity::new(label))
+  }
+
+  pub fn add<T>(mut self, component: T) -> EntityBuilder where T: Component + 'static {
+    self.0.add(component);
+    self
+  }
+
+  pub fn build(self) -> Entity {
+    self.0
+  }
 }
 
 impl Entity {
   /// Creates a new `Entity` with an empty bag of components
-  pub fn new() -> Entity {
-    Entity { components: ComponentStore::new() }
-  }
-}
-
-/// `Globals` is similar to `ComponentStore`, but where `ComponentStore`s are tied to `Entities`,
-/// this is tied to the `World` instead. This means that values stored in here are available to
-/// every `System` globally. This is particularly useful for access to shared resources, such as
-/// the display window or control inputs.
-pub type Globals = AnyMap;
-
-/// A `System` operates directly on a `World`.
-pub trait System {
-  /// Operate on the `World` according to the purpose of this `System`.
-  fn process(&self, world_data: &mut WorldData);
-}
-
-/// A `System` specialised in working with `Entity`s filtered by component.
-pub trait EntitySystem {
-  /// `TypeId`s of the components this `System` operate on.
-  fn operates_on(&self) -> Vec<TypeId>;
-
-  /// Operate on the `Entity`s using the `Globals`.
-  fn process_entities(&self, entities: Vec<&Entity>, globals: &Globals);
-}
-
-impl <T: EntitySystem> System for T {
-  fn process(&self, world_data: &mut WorldData) {
-    let filtered_entities = world_data.entities.iter()
-          .filter(| e | self.operates_on().into_iter().all(| id | e.components.contains_key(&id)))
-          .collect();
-    self.process_entities(filtered_entities, &world_data.globals);
-  }
-}
-
-/// This holds the `Entity`s and `Globals`, to allow this to be passed in as a whole to
-/// `System.process` without upsetting the borrow checker.
-#[derive(Debug)]
-pub struct WorldData {
-  /// All entities are stored in this `Vec`. Ideally `create_entity` should be used to add to this
-  /// collection, as it conveniently allows the `ComponentStore` to be set at the same time as well.
-  pub entities: Vec<Entity>,
-  /// All 'world-level' components are stored in this object (a Typedef'd `AnyMap`), and as such
-  /// only one instance of each component type can be stored here. Intended to be added to directly
-  /// using the methods on `Globals` from `AnyMap`.
-  pub globals: Globals,
-}
-
-impl WorldData {
-  /// Creates a new WorldData with empty `Entity`s and `Globals`
-  pub fn new() -> WorldData {
-    WorldData {
-      entities: vec!(),
-      globals: Globals::new(),
+  pub fn new(label: &'static str) -> Entity {
+    Entity {
+      id: 0,
+      label: String::from(label),
+      component_mask: 0,
+      components: vec!(),
     }
   }
 
-  /// Convenience method to add a new entity to the world, populated using the callback supplied.
-  pub fn create_entity<CB>(&mut self, cb: CB) where CB: Fn(&mut ComponentStore) -> () {
-    let mut entity = Entity::new();
-    cb(&mut entity.components);
-    self.entities.push(entity);
+  pub fn add<T>(&mut self, component: T) where T: Component + 'static {
+    self.component_mask = self.component_mask | T::mask();
+    self.components.push(Box::new(component));
   }
 }
 
-/// The root of the ECS system, a `World` is the point at which all `Entity`s, `Globals` and
-/// `System`s are owned. All accesses downstream from this are on borrows.
-pub struct World {
-  /// All `System`s that operate on components are stored within this `Vec`. As `System` is a
-  /// trait, we have to box all systems that are added here (it might be possible to avoid that?
-  /// answers on a pull-request ^_^ ) and so subsequently all method calls for systems as well.
-  pub systems: Vec<Box<System>>,
-  /// Container for `Entity`s and `Globals`
-  pub world_data: WorldData,
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
 
-impl World {
-  /// Creates a new world, with all three collections empty.
-  pub fn new() -> World {
-    World {
-      systems: vec!(),
-      world_data: WorldData::new(),
-    }
+  pub struct TestComponent(u8);
+
+  components!(TestComponent);
+
+  #[test]
+  fn entity_can_be_built() {
+    let entity = EntityBuilder::create("test").build();
+    assert_eq!(entity.label, "test");
   }
 
-  /// Convenience method to add a new entity to the world, populated using the callback supplied.
-  pub fn create_entity<CB>(&mut self, cb: CB) where CB: Fn(&mut ComponentStore) -> () {
-    self.world_data.create_entity(cb);
-  }
-
-  /// Register a system in the world.
-  pub fn register(&mut self, system: Box<System>) {
-    self.systems.push(system);
-  }
-
-  /// Updates the world, by calling all systems in turn with a the entire world. Currently
-  /// completely un-optimized.
-  pub fn update(&mut self) {
-    for system in self.systems.iter() {
-      system.process(&mut self.world_data);
-    }
+  #[test]
+  fn entity_can_contain_components() {
+    let entity = EntityBuilder::create("test")
+                                .add(TestComponent(1))
+                                .build();
+    assert_eq!(entity.label, "test");
+    assert_eq!(entity.component_mask, TestComponent::mask());
   }
 }

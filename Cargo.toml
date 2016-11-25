@@ -1,6 +1,6 @@
 [package]
 name = "yaecs"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["David Edmonds <edmonds.d.r@gmail.com>"]
 description = "Yet Another Entity Component System."
 license = "MIT"
@@ -11,7 +11,7 @@ repository = "https://github.com/davidedmonds/yaecs"
 readme = "README.md"
 
 [dependencies]
-anymap = { git = "https://github.com/davidedmonds/anymap" }
+snowflake = "*"
 
 [dev-dependencies]
 avow = "0.1.0"
