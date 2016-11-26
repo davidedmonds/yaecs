@@ -102,6 +102,10 @@ impl World {
       entities: vec!()
     }
   }
+
+  pub fn add_entity(&mut self, entity: Entity) {
+    self.entities.push(entity);
+  }
 }
 
 #[cfg(test)]
@@ -133,5 +137,19 @@ mod tests {
   fn world_can_be_created() {
     let world = World::new();
     assert!(world.entities.is_empty());
+  }
+
+  #[test]
+  fn world_can_contain_entities() {
+    let mut world = World::new();
+    world.add_entity(EntityBuilder::create("test")
+                                  .add(TestComponent(1))
+                                  .build());
+
+    assert!(!world.entities.is_empty());
+    let ref entity = world.entities[0];
+    assert_eq!(entity.label, "test");
+    assert_eq!(entity.component_mask, TestComponent::mask());
+    assert_eq!(entity.components.get(), Some(&TestComponent(1)));
   }
 }
