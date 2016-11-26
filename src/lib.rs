@@ -39,7 +39,7 @@ macro_rules! components {
         }
 
         fn fmt(&self) -> String {
-          String::from("Component")
+          String::from("$t")
         }
       }
     )+
@@ -50,8 +50,6 @@ macro_rules! components {
 /// a subset of all entities that posess components the `System` is interested in.
 #[derive(Debug)]
 pub struct Entity {
-  /// The unique identifier for this entity. TODO is this needed?
-  pub id: u64,
   /// A user-defined label for this entity. This could be thrown out if in future we run into
   /// memory issues, but for now its convenient as it allows us to more easily identify an entity.
   pub label: String,
@@ -82,7 +80,6 @@ impl Entity {
   /// Creates a new `Entity` with an empty bag of components
   pub fn new(label: &'static str) -> Entity {
     Entity {
-      id: 0,
       label: String::from(label),
       component_mask: 0,
       components: AnyMap::new(),
@@ -92,6 +89,18 @@ impl Entity {
   pub fn add<T>(&mut self, component: T) where T: Component + Any {
     self.component_mask = self.component_mask | T::mask();
     self.components.insert(component);
+  }
+}
+
+pub struct World {
+  entities: Vec<Entity>,
+}
+
+impl World {
+  pub fn new() -> World {
+    World {
+      entities: vec!()
+    }
   }
 }
 
@@ -118,5 +127,11 @@ mod tests {
     assert_eq!(entity.label, "test");
     assert_eq!(entity.component_mask, TestComponent::mask());
     assert_eq!(entity.components.get(), Some(&TestComponent(1)));
+  }
+
+  #[test]
+  fn world_can_be_created() {
+    let world = World::new();
+    assert!(world.entities.is_empty());
   }
 }
