@@ -59,6 +59,22 @@ pub struct Entity {
   pub components: AnyMap
 }
 
+impl Entity {
+  /// Creates a new `Entity` with an empty bag of components
+  pub fn new(label: &'static str) -> Entity {
+    Entity {
+      label: String::from(label),
+      component_mask: 0,
+      components: AnyMap::new(),
+    }
+  }
+
+  pub fn add<T>(&mut self, component: T) where T: Component + Any {
+    self.component_mask = self.component_mask | T::mask();
+    self.components.insert(component);
+  }
+}
+
 pub struct EntityBuilder(Entity);
 
 impl EntityBuilder {
@@ -76,24 +92,8 @@ impl EntityBuilder {
   }
 }
 
-impl Entity {
-  /// Creates a new `Entity` with an empty bag of components
-  pub fn new(label: &'static str) -> Entity {
-    Entity {
-      label: String::from(label),
-      component_mask: 0,
-      components: AnyMap::new(),
-    }
-  }
-
-  pub fn add<T>(&mut self, component: T) where T: Component + Any {
-    self.component_mask = self.component_mask | T::mask();
-    self.components.insert(component);
-  }
-}
-
 pub trait System {
-  fn process(&self, entities: &mut Vec<Entity>);
+  fn process(&self, entities: &mut Vec<Entity>, globals: &mut AnyMap);
 }
 
 impl Debug for System {
@@ -104,6 +104,7 @@ impl Debug for System {
 
 pub struct World {
   entities: Vec<Entity>,
+  globals: AnyMap,
   systems: Vec<Box<System>>,
 }
 
@@ -111,6 +112,7 @@ impl World {
   pub fn new() -> World {
     World {
       entities: vec!(),
+      globals: AnyMap::new(),
       systems: vec!(),
     }
   }
@@ -119,13 +121,17 @@ impl World {
     self.entities.push(entity);
   }
 
+  pub fn add_global<T: Any>(&mut self, global: T) {
+    self.globals.insert(global);
+  }
+
   pub fn add_system<T: System + 'static>(&mut self, system: T) {
     self.systems.push(Box::new(system));
   }
 
   pub fn update(&mut self) {
     for system in &self.systems {
-      (*system).process(&mut self.entities);
+      (*system).process(&mut self.entities, &mut self.globals);
     }
   }
 }
@@ -133,6 +139,7 @@ impl World {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use anymap::AnyMap;
 
   #[derive(Debug, PartialEq)]
   struct TestComponent(u8);
@@ -143,7 +150,7 @@ mod tests {
   struct TestSystem;
 
   impl System for TestSystem {
-    fn process(&self, _: &mut Vec<Entity>) { }
+    fn process(&self, _: &mut Vec<Entity>, _: &mut AnyMap) { }
   }
 
   #[test]
