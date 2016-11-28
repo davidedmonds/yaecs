@@ -92,19 +92,33 @@ impl Entity {
   }
 }
 
+pub trait System {}
+
+impl Debug for System {
+  fn fmt(&self, f: &mut Formatter) -> Result {
+    write!(f, "System")
+  }
+}
+
 pub struct World {
   entities: Vec<Entity>,
+  systems: Vec<Box<System>>,
 }
 
 impl World {
   pub fn new() -> World {
     World {
-      entities: vec!()
+      entities: vec!(),
+      systems: vec!(),
     }
   }
 
   pub fn add_entity(&mut self, entity: Entity) {
     self.entities.push(entity);
+  }
+
+  pub fn add_system<T: System + 'static>(&mut self, system: T) {
+    self.systems.push(Box::new(system));
   }
 }
 
@@ -113,9 +127,14 @@ mod tests {
   use super::*;
 
   #[derive(Debug, PartialEq)]
-  pub struct TestComponent(u8);
+  struct TestComponent(u8);
 
   components!(TestComponent);
+
+  #[derive(Debug, PartialEq)]
+  struct TestSystem;
+
+  impl System for TestSystem { }
 
   #[test]
   fn entity_can_be_built() {
@@ -151,5 +170,14 @@ mod tests {
     assert_eq!(entity.label, "test");
     assert_eq!(entity.component_mask, TestComponent::mask());
     assert_eq!(entity.components.get(), Some(&TestComponent(1)));
+  }
+
+  #[test]
+  fn world_can_contain_systems() {
+    let mut world = World::new();
+
+    assert!(world.systems.is_empty());
+    world.add_system(TestSystem);
+    assert!(!world.systems.is_empty());
   }
 }
