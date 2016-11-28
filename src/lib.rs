@@ -129,6 +129,10 @@ impl World {
     self.systems.push(Box::new(system));
   }
 
+  pub fn get_global<T: Any>(&self) -> Option<&T> {
+    self.globals.get::<T>()
+  }
+
   pub fn update(&mut self) {
     for system in &self.systems {
       (*system).process(&mut self.entities, &mut self.globals);
