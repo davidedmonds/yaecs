@@ -92,8 +92,10 @@ impl EntityBuilder {
   }
 }
 
+pub type Globals = AnyMap;
+
 pub trait System {
-  fn process(&self, entities: &mut Vec<Entity>, globals: &mut AnyMap);
+  fn process(&self, entities: &mut Vec<Entity>, globals: &mut Globals);
 }
 
 impl Debug for System {
@@ -104,7 +106,7 @@ impl Debug for System {
 
 pub struct World {
   entities: Vec<Entity>,
-  globals: AnyMap,
+  globals: Globals,
   systems: Vec<Box<System>>,
 }
 
@@ -112,7 +114,7 @@ impl World {
   pub fn new() -> World {
     World {
       entities: vec!(),
-      globals: AnyMap::new(),
+      globals: Globals::new(),
       systems: vec!(),
     }
   }
