@@ -11,7 +11,7 @@ repository = "https://github.com/davidedmonds/yaecs"
 readme = "README.md"
 
 [dependencies]
-anymap = "*"
+anymap = "0.12.0"
 
 [dev-dependencies]
 avow = "0.1.0"
