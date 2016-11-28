@@ -92,7 +92,9 @@ impl Entity {
   }
 }
 
-pub trait System {}
+pub trait System {
+  fn process(&self, entities: &mut Vec<Entity>);
+}
 
 impl Debug for System {
   fn fmt(&self, f: &mut Formatter) -> Result {
@@ -120,6 +122,12 @@ impl World {
   pub fn add_system<T: System + 'static>(&mut self, system: T) {
     self.systems.push(Box::new(system));
   }
+
+  pub fn update(&mut self) {
+    for system in &self.systems {
+      (*system).process(&mut self.entities);
+    }
+  }
 }
 
 #[cfg(test)]
@@ -134,7 +142,9 @@ mod tests {
   #[derive(Debug, PartialEq)]
   struct TestSystem;
 
-  impl System for TestSystem { }
+  impl System for TestSystem {
+    fn process(&self, _: &mut Vec<Entity>) { }
+  }
 
   #[test]
   fn entity_can_be_built() {
