@@ -73,6 +73,10 @@ impl Entity {
     self.component_mask = self.component_mask | T::mask();
     self.components.insert(component);
   }
+
+  pub fn has<T>(&self) -> bool where T: Component + Any {
+    self.component_mask & T::mask() == T::mask()
+  }
 }
 
 pub struct EntityBuilder(Entity);
@@ -150,7 +154,9 @@ mod tests {
   #[derive(Debug, PartialEq)]
   struct TestComponent(u8);
 
-  components!(TestComponent);
+  struct AnotherComponent;
+
+  components!(TestComponent, AnotherComponent);
 
   #[derive(Debug, PartialEq)]
   struct TestSystem;
@@ -173,6 +179,21 @@ mod tests {
     assert_eq!(entity.label, "test");
     assert_eq!(entity.component_mask, TestComponent::mask());
     assert_eq!(entity.components.get(), Some(&TestComponent(1)));
+  }
+
+  #[test]
+  fn entity_has_components_works() {
+    let entity = EntityBuilder::create("test")
+                                .add(TestComponent(1))
+                                .build();
+    assert!(entity.has::<TestComponent>());
+    assert!(!entity.has::<AnotherComponent>());
+
+    let entity = EntityBuilder::create("test")
+                                .add(AnotherComponent)
+                                .build();
+    assert!(!entity.has::<TestComponent>());
+    assert!(entity.has::<AnotherComponent>());
   }
 
   #[test]
