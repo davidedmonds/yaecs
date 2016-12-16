@@ -69,6 +69,10 @@ impl Entity {
     }
   }
 
+  //TODO remove these, using entity.components.* methods instead once components is properly typed.
+  //     can probably remove the component_mask as well as AnyMap will likely be using something
+  //     similarly fast
+
   pub fn add<T>(&mut self, component: T) where T: Component + Any {
     self.component_mask = self.component_mask | T::mask();
     self.components.insert(component);
@@ -76,6 +80,14 @@ impl Entity {
 
   pub fn has<T>(&self) -> bool where T: Component + Any {
     self.component_mask & T::mask() == T::mask()
+  }
+
+  pub fn get<T>(&mut self) -> Option<&T> where T: Component + Any {
+    self.components.get::<T>()
+  }
+
+  pub fn get_mut<T>(&mut self) -> Option<&mut T> where T: Component + Any {
+    self.components.get_mut::<T>()
   }
 }
 
