@@ -1,12 +1,10 @@
 #[macro_use] extern crate yaecs;
 
-use yaecs::{Component, EntityBuilder};
+use yaecs::EntityBuilder;
 
 struct BasicComponent(u8);
 
 struct OtherBasicComponent;
-
-components!(BasicComponent, OtherBasicComponent);
 
 fn main() {
   let entity = EntityBuilder::create("test")

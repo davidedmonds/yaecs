@@ -7,45 +7,6 @@ use anymap::AnyMap;
 use std::any::Any;
 use std::fmt::{Debug, Formatter, Result};
 
-///
-pub trait Component {
-  fn mask() -> u64 where Self: Sized;
-  fn fmt(&self) -> String;
-}
-
-impl Debug for Component {
-  fn fmt(&self, f: &mut Formatter) -> Result {
-    write!(f, "Component {}", self.fmt())
-  }
-}
-
-/// Macro that generates a bitflag implementation for all supplied components. This allows us to
-/// much more quickly determine whether an `Entity` has the required components for a `System`.
-/// Note that we are limited to 64 component types with this method.
-#[macro_export]
-macro_rules! components {
-  ($($t:ident),+) => {
-    /// An enumeration of all the possible component types.
-    enum Components {
-      $($t),+
-    }
-
-    $(
-      /// Adds the `mask()` method to each component, returning the generated bitflag value.
-      impl Component for $t {
-        /// Returns a bitflag used to identify each component.
-        fn mask() -> u64 {
-          1 << (Components::$t as u64)
-        }
-
-        fn fmt(&self) -> String {
-          String::from("$t")
-        }
-      }
-    )+
-  };
-}
-
 /// An `Entity` is simply an identifier for a bag of components. In general, `System`s operate on
 /// a subset of all entities that posess components the `System` is interested in.
 #[derive(Debug)]
@@ -53,8 +14,6 @@ pub struct Entity {
   /// A user-defined label for this entity. This could be thrown out if in future we run into
   /// memory issues, but for now its convenient as it allows us to more easily identify an entity.
   pub label: String,
-  /// Bitmask, indicating which components are implemented for this type.
-  pub component_mask: u64,
   /// Bag of components
   pub components: AnyMap
 }
@@ -64,30 +23,8 @@ impl Entity {
   pub fn new(label: &'static str) -> Entity {
     Entity {
       label: String::from(label),
-      component_mask: 0,
       components: AnyMap::new(),
     }
-  }
-
-  //TODO remove these, using entity.components.* methods instead once components is properly typed.
-  //     can probably remove the component_mask as well as AnyMap will likely be using something
-  //     similarly fast
-
-  pub fn add<T>(&mut self, component: T) where T: Component + Any {
-    self.component_mask = self.component_mask | T::mask();
-    self.components.insert(component);
-  }
-
-  pub fn has<T>(&self) -> bool where T: Component + Any {
-    self.component_mask & T::mask() == T::mask()
-  }
-
-  pub fn get<T>(&mut self) -> Option<&T> where T: Component + Any {
-    self.components.get::<T>()
-  }
-
-  pub fn get_mut<T>(&mut self) -> Option<&mut T> where T: Component + Any {
-    self.components.get_mut::<T>()
   }
 }
 
@@ -98,8 +35,8 @@ impl EntityBuilder {
     EntityBuilder(Entity::new(label))
   }
 
-  pub fn add<T>(mut self, component: T) -> EntityBuilder where T: Component + Any {
-    self.0.add(component);
+  pub fn add<T: Any>(mut self, component: T) -> EntityBuilder {
+    self.0.components.insert(component);
     self
   }
 
@@ -168,8 +105,6 @@ mod tests {
 
   struct AnotherComponent;
 
-  components!(TestComponent, AnotherComponent);
-
   #[derive(Debug, PartialEq)]
   struct TestSystem;
 
@@ -189,8 +124,7 @@ mod tests {
                                 .add(TestComponent(1))
                                 .build();
     assert_eq!(entity.label, "test");
-    assert_eq!(entity.component_mask, TestComponent::mask());
-    assert_eq!(entity.components.get(), Some(&TestComponent(1)));
+    assert_eq!(entity.components.get::<TestComponent>(), Some(&TestComponent(1)));
   }
 
   #[test]
@@ -198,14 +132,14 @@ mod tests {
     let entity = EntityBuilder::create("test")
                                 .add(TestComponent(1))
                                 .build();
-    assert!(entity.has::<TestComponent>());
-    assert!(!entity.has::<AnotherComponent>());
+    assert!(entity.components.contains::<TestComponent>());
+    assert!(!entity.components.contains::<AnotherComponent>());
 
     let entity = EntityBuilder::create("test")
                                 .add(AnotherComponent)
                                 .build();
-    assert!(!entity.has::<TestComponent>());
-    assert!(entity.has::<AnotherComponent>());
+    assert!(!entity.components.contains::<TestComponent>());
+    assert!(entity.components.contains::<AnotherComponent>());
   }
 
   #[test]
@@ -224,7 +158,6 @@ mod tests {
     assert!(!world.entities.is_empty());
     let ref entity = world.entities[0];
     assert_eq!(entity.label, "test");
-    assert_eq!(entity.component_mask, TestComponent::mask());
     assert_eq!(entity.components.get(), Some(&TestComponent(1)));
   }
 
