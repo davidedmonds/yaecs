@@ -4,6 +4,8 @@ extern crate anymap;
 
 use anymap::AnyMap;
 
+use std::ops::Index;
+
 use std::any::Any;
 use std::fmt::{Debug, Formatter, Result};
 
@@ -28,6 +30,37 @@ impl Entity {
     }
 }
 
+pub struct Entities(Vec<Entity>);
+
+impl Entities {
+    pub fn new() -> Entities {
+        Entities(vec![])
+    }
+
+    pub fn push(&mut self, entity: Entity) {
+        self.0.push(entity);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn with_component<T: 'static>(&self) -> Vec<&T> {
+        self.0
+            .iter()
+            .filter_map(|e| e.components.get::<T>())
+            .collect()
+    }
+}
+
+impl Index<usize> for Entities {
+    type Output = Entity;
+
+    fn index(&self, index: usize) -> &Entity {
+        &self.0[index]
+    }
+}
+
 pub struct EntityBuilder(Entity);
 
 impl EntityBuilder {
@@ -48,7 +81,7 @@ impl EntityBuilder {
 pub type Globals = AnyMap;
 
 pub trait System {
-    fn process(&self, entities: &mut Vec<Entity>, globals: &mut Globals);
+    fn process(&self, entities: &mut Entities, globals: &mut Globals);
 }
 
 impl Debug for System {
@@ -58,7 +91,7 @@ impl Debug for System {
 }
 
 pub struct World {
-    entities: Vec<Entity>,
+    entities: Entities,
     globals: Globals,
     systems: Vec<Box<System>>,
 }
@@ -66,7 +99,7 @@ pub struct World {
 impl World {
     pub fn new() -> World {
         World {
-            entities: vec![],
+            entities: Entities::new(),
             globals: Globals::new(),
             systems: vec![],
         }
@@ -109,7 +142,7 @@ mod tests {
     struct TestSystem;
 
     impl System for TestSystem {
-        fn process(&self, _: &mut Vec<Entity>, _: &mut AnyMap) {}
+        fn process(&self, _: &mut Entities, _: &mut AnyMap) {}
     }
 
     #[test]
@@ -141,6 +174,20 @@ mod tests {
             .build();
         assert!(!entity.components.contains::<TestComponent>());
         assert!(entity.components.contains::<AnotherComponent>());
+    }
+
+    #[test]
+    fn entities_with_component_works() {
+        let mut entities = Entities::new();
+        entities.push(EntityBuilder::create("test")
+            .add(TestComponent(1))
+            .build());
+        entities.push(EntityBuilder::create("test")
+            .add(AnotherComponent)
+            .build());
+
+        let test_component = entities.with_component::<TestComponent>().pop();
+        assert_eq!(test_component, Some(&TestComponent(1)));
     }
 
     #[test]
