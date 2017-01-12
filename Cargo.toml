@@ -1,6 +1,6 @@
 [package]
 name = "yaecs"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["David Edmonds <edmonds.d.r@gmail.com>"]
 description = "Yet Another Entity Component System."
 license = "MIT"

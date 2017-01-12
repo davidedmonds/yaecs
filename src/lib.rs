@@ -51,6 +51,13 @@ impl Entities {
             .filter_map(|e| e.components.get::<T>())
             .collect()
     }
+
+    pub fn with_component_mut<T: 'static>(&mut self) -> Vec<&mut T> {
+        self.0
+            .iter_mut()
+            .filter_map(|e| e.components.get_mut::<T>())
+            .collect()
+    }
 }
 
 impl Index<usize> for Entities {
@@ -134,7 +141,7 @@ mod tests {
     use anymap::AnyMap;
 
     #[derive(Debug, PartialEq)]
-    struct TestComponent(u8);
+    struct TestComponent(pub u8);
 
     struct AnotherComponent;
 
@@ -188,6 +195,24 @@ mod tests {
 
         let test_component = entities.with_component::<TestComponent>().pop();
         assert_eq!(test_component, Some(&TestComponent(1)));
+    }
+
+    #[test]
+    fn entities_with_component_mut_works() {
+        let mut entities = Entities::new();
+        entities.push(EntityBuilder::create("test")
+            .add(TestComponent(1))
+            .build());
+        entities.push(EntityBuilder::create("test")
+            .add(AnotherComponent)
+            .build());
+
+        let test_component = entities.with_component_mut::<TestComponent>().pop();
+        assert_eq!(test_component, Some(&mut TestComponent(1)));
+
+        let mut unwrapped = test_component.unwrap();
+        unwrapped.0 = 2;
+        assert_eq!(unwrapped, &mut TestComponent(2));
     }
 
     #[test]
