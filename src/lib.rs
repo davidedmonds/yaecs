@@ -45,14 +45,28 @@ impl Entities {
         self.0.is_empty()
     }
 
-    pub fn with_component<T: 'static>(&self) -> Vec<&T> {
+    pub fn with_component<T: 'static>(&self) -> Vec<&Entity> {
+        self.0
+            .iter()
+            .filter(|e| e.components.contains::<T>())
+            .collect()
+    }
+
+    pub fn with_component_mut<T: 'static>(&mut self) -> Vec<&mut Entity> {
+        self.0
+            .iter_mut()
+            .filter(|e| e.components.contains::<T>())
+            .collect()
+    }
+
+    pub fn filter_map_to_component<T: 'static>(&self) -> Vec<&T> {
         self.0
             .iter()
             .filter_map(|e| e.components.get::<T>())
             .collect()
     }
 
-    pub fn with_component_mut<T: 'static>(&mut self) -> Vec<&mut T> {
+    pub fn filter_map_to_component_mut<T: 'static>(&mut self) -> Vec<&mut T> {
         self.0
             .iter_mut()
             .filter_map(|e| e.components.get_mut::<T>())
@@ -65,15 +79,6 @@ impl Index<usize> for Entities {
 
     fn index(&self, index: usize) -> &Entity {
         &self.0[index]
-    }
-}
-
-impl IntoIterator for Entities {
-    type Item = Entity;
-    type IntoIter = ::std::vec::IntoIter<Entity>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
     }
 }
 
@@ -203,8 +208,8 @@ mod tests {
             .add(AnotherComponent)
             .build());
 
-        let test_component = entities.with_component::<TestComponent>().pop();
-        assert_eq!(test_component, Some(&TestComponent(1)));
+        let test_component = entities.with_component::<TestComponent>().pop().unwrap();
+        assert!(test_component.components.contains::<TestComponent>());
     }
 
     #[test]
@@ -217,16 +222,17 @@ mod tests {
             .add(AnotherComponent)
             .build());
 
-        let test_component = entities.with_component_mut::<TestComponent>().pop();
-        assert_eq!(test_component, Some(&mut TestComponent(1)));
+        let test_component = entities.with_component_mut::<TestComponent>().pop().unwrap();
+        assert!(test_component.components.contains::<TestComponent>());
 
-        let mut unwrapped = test_component.unwrap();
+        let mut unwrapped = test_component.components.get_mut::<TestComponent>().unwrap();
         unwrapped.0 = 2;
         assert_eq!(unwrapped, &mut TestComponent(2));
     }
 
+
     #[test]
-    fn entities_iter_works() {
+    fn entities_filter_map_to_component_works() {
         let mut entities = Entities::new();
         entities.push(EntityBuilder::create("test")
             .add(TestComponent(1))
@@ -235,9 +241,26 @@ mod tests {
             .add(AnotherComponent)
             .build());
 
-        let mut iter = entities.into_iter();
-        assert!(iter.next().unwrap().components.contains::<TestComponent>());
-        assert!(iter.next().unwrap().components.contains::<AnotherComponent>());
+        let test_component = entities.filter_map_to_component::<TestComponent>().pop();
+        assert_eq!(test_component, Some(&TestComponent(1)));
+    }
+
+    #[test]
+    fn entities_filter_map_to_component_mut_works() {
+        let mut entities = Entities::new();
+        entities.push(EntityBuilder::create("test")
+            .add(TestComponent(1))
+            .build());
+        entities.push(EntityBuilder::create("test")
+            .add(AnotherComponent)
+            .build());
+
+        let test_component = entities.filter_map_to_component_mut::<TestComponent>().pop();
+        assert_eq!(test_component, Some(&mut TestComponent(1)));
+
+        let mut unwrapped = test_component.unwrap();
+        unwrapped.0 = 2;
+        assert_eq!(unwrapped, &mut TestComponent(2));
     }
 
     #[test]
