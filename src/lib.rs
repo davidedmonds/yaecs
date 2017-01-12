@@ -68,6 +68,15 @@ impl Index<usize> for Entities {
     }
 }
 
+impl IntoIterator for Entities {
+    type Item = Entity;
+    type IntoIter = ::std::vec::IntoIter<Entity>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 pub struct EntityBuilder(Entity);
 
 impl EntityBuilder {
@@ -143,6 +152,7 @@ mod tests {
     #[derive(Debug, PartialEq)]
     struct TestComponent(pub u8);
 
+    #[derive(Debug, PartialEq)]
     struct AnotherComponent;
 
     #[derive(Debug, PartialEq)]
@@ -213,6 +223,21 @@ mod tests {
         let mut unwrapped = test_component.unwrap();
         unwrapped.0 = 2;
         assert_eq!(unwrapped, &mut TestComponent(2));
+    }
+
+    #[test]
+    fn entities_iter_works() {
+        let mut entities = Entities::new();
+        entities.push(EntityBuilder::create("test")
+            .add(TestComponent(1))
+            .build());
+        entities.push(EntityBuilder::create("test")
+            .add(AnotherComponent)
+            .build());
+
+        let mut iter = entities.into_iter();
+        assert!(iter.next().unwrap().components.contains::<TestComponent>());
+        assert!(iter.next().unwrap().components.contains::<AnotherComponent>());
     }
 
     #[test]
