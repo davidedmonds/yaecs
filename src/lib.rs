@@ -30,6 +30,12 @@ impl Entity {
     }
 }
 
+impl PartialEq for Entity {
+    fn eq(&self, other: &Entity) -> bool {
+        self.label == other.label
+    }
+}
+
 pub struct Entities(Vec<Entity>);
 
 impl Entities {
@@ -43,6 +49,14 @@ impl Entities {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn with_label(&self, label: &str) -> Vec<&Entity> {
+        self.0
+            .iter()
+            .filter(|e| e.label == label)
+            .collect()
+        // .pop::<Option<&Entity>>()
     }
 
     pub fn with_component<T: 'static>(&self) -> Vec<&Entity> {
@@ -196,6 +210,25 @@ mod tests {
             .build();
         assert!(!entity.components.contains::<TestComponent>());
         assert!(entity.components.contains::<AnotherComponent>());
+    }
+
+    #[test]
+    fn entities_with_label_works() {
+        let mut entities = Entities::new();
+        let ent1 = EntityBuilder::create("test1")
+            .add(TestComponent(1))
+            .build();
+        let ent2 = EntityBuilder::create("test2")
+            .add(AnotherComponent)
+            .build();
+
+        entities.push(ent1);
+        entities.push(ent2);
+
+        let mut results = entities.with_label("test1");
+        assert_eq!(1, results.len());
+        assert_eq!("test1", results.pop().unwrap().label);
+        assert!(entities.with_label("aaaaaa").is_empty());
     }
 
     #[test]
