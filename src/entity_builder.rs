@@ -25,7 +25,6 @@ impl EntityBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anymap::AnyMap;
 
     #[test]
     fn entity_can_be_built() {

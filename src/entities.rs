@@ -16,12 +16,15 @@ impl Entities {
         self.0.is_empty()
     }
 
+    pub fn vec(&self) -> Vec<&Entity> {
+        self.0.iter().collect()
+    }
+
     pub fn with_label(&self, label: &str) -> Vec<&Entity> {
         self.0
             .iter()
             .filter(|e| e.label == label)
             .collect()
-        // .pop::<Option<&Entity>>()
     }
 
     pub fn with_component<T: 'static>(&self) -> Vec<&Entity> {
@@ -71,6 +74,20 @@ mod tests {
 
     #[derive(Debug, PartialEq)]
     struct AnotherComponent;
+
+    #[test]
+    fn iter_works() {
+        let mut entities = Entities::new();
+        entities.push(EntityBuilder::create_str("test1")
+            .add(TestComponent(1))
+            .build());
+        entities.push(EntityBuilder::create_str("test2")
+            .add(AnotherComponent)
+            .build());
+
+        let res = entities.vec();
+        assert_eq!(2, res.len());
+    }
 
     #[test]
     fn with_label_works() {

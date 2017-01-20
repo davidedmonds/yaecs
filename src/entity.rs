@@ -29,6 +29,8 @@ impl PartialEq for Entity {
 
 #[cfg(test)]
 mod tests {
+    use ::EntityBuilder;
+
     #[derive(Debug, PartialEq)]
     struct TestComponent(pub u8);
 
@@ -37,7 +39,7 @@ mod tests {
 
     #[test]
     fn entity_can_contain_components() {
-        let entity = EntityBuilder::create("test")
+        let entity = EntityBuilder::create_str("test")
             .add(TestComponent(1))
             .build();
         assert_eq!(entity.label, "test");
@@ -47,13 +49,13 @@ mod tests {
 
     #[test]
     fn entity_has_components_works() {
-        let entity = EntityBuilder::create("test")
+        let entity = EntityBuilder::create_str("test")
             .add(TestComponent(1))
             .build();
         assert!(entity.components.contains::<TestComponent>());
         assert!(!entity.components.contains::<AnotherComponent>());
 
-        let entity = EntityBuilder::create("test")
+        let entity = EntityBuilder::create_str("test")
             .add(AnotherComponent)
             .build();
         assert!(!entity.components.contains::<TestComponent>());
