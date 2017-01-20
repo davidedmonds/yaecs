@@ -12,6 +12,10 @@ impl Entities {
         self.0.push(entity);
     }
 
+    pub fn remove(&mut self, idx: usize) {
+        self.0.swap_remove(idx);
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
