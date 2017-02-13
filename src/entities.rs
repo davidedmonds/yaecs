@@ -27,14 +27,14 @@ impl Entities {
     pub fn with_label(&self, label: &str) -> Vec<&Entity> {
         self.0
             .iter()
-            .filter(|e| e.label == label)
+            .filter(|e| e.label() == label)
             .collect()
     }
 
     pub fn with_label_mut(&mut self, label: &str) -> Vec<&mut Entity> {
         self.0
             .iter_mut()
-            .filter(|e| e.label == label)
+            .filter(|e| e.label() == label)
             .collect()
     }
 
@@ -115,7 +115,7 @@ mod tests {
 
         let mut results = entities.with_label("test1");
         assert_eq!(1, results.len());
-        assert_eq!("test1", results.pop().unwrap().label);
+        assert_eq!("test1", results.pop().unwrap().label());
         assert!(entities.with_label("aaaaaa").is_empty());
     }
 
@@ -137,7 +137,7 @@ mod tests {
             assert_eq!(1, results.len());
 
             let mut unwrapped = results.pop().unwrap();
-            assert_eq!("test1", unwrapped.label);
+            assert_eq!("test1", unwrapped.label());
             let mut unwrapped_component = unwrapped.components.get_mut::<TestComponent>().unwrap();
             unwrapped_component.0 = 2;
             assert_eq!(unwrapped_component, &mut TestComponent(2));

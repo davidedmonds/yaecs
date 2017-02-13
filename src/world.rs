@@ -73,7 +73,7 @@ mod tests {
 
         assert!(!world.entities.is_empty());
         let ref entity = world.entities[0];
-        assert_eq!(entity.label, "test");
+        assert_eq!(entity.label(), "test");
         assert_eq!(entity.components.get(), Some(&TestComponent(1)));
     }
 
