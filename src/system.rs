@@ -2,7 +2,7 @@ use ::{Entities, Globals};
 use std::fmt::{Debug, Formatter, Result};
 
 pub trait System {
-    fn process(&self, entities: &mut Entities, globals: &mut Globals);
+    fn process(&mut self, entities: &mut Entities, globals: &mut Globals);
 }
 
 impl Debug for System {

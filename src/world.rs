@@ -33,8 +33,8 @@ impl World {
     }
 
     pub fn update(&mut self) {
-        for system in &self.systems {
-            (*system).process(&mut self.entities, &mut self.globals);
+        for system in self.systems.iter_mut() {
+            system.process(&mut self.entities, &mut self.globals);
         }
     }
 }
@@ -55,7 +55,7 @@ mod tests {
     struct TestSystem;
 
     impl System for TestSystem {
-        fn process(&self, _: &mut Entities, _: &mut AnyMap) {}
+        fn process(&mut self, _: &mut Entities, _: &mut AnyMap) {}
     }
 
     #[test]
